@@ -12,22 +12,11 @@
 
 const int EVAL_RANGE = 1; // for the purpose of RNN network we start playing around one tick per one NN evolution
 
-//extern int PROFIT_THRESHOLD = 50;
-//extern int LOSS_THRESHOLD   = 10;
-extern int PROFIT_MARGIN    = 0; // by how much to adjust take profit
-extern int LOSS_MARGIN    = 0; // by how much to adjust take profit
-
-extern int OpenHour = 08;
-extern int OpenMin = 30;
-extern int CloseHour = 17;
-extern int CloseMin = 30;
-
-
 int file_handle = FileOpen(StringConcatenate("mt4_",Symbol(),"_", Period(),"_range_", EVAL_RANGE, "_OHCLT_train_data.csv"),FILE_READ|FILE_WRITE|FILE_CSV);
 int barsTotal   = 0;
 
 int start() {
-   
+
    return (0);
 }
 
@@ -38,12 +27,12 @@ int OnInit()
   {
 //--- create timer
    EventSetTimer(60);
-      
+
      //  string data = getCSVHeader(Symbol(), Period(), EVAL_RANGE);
-       
-       
+
+
     //  FileWrite(file_handle, data);
-       
+
 //---
    return(INIT_SUCCEEDED);
   }
@@ -54,7 +43,7 @@ void OnDeinit(const int reason)
   {
 //--- destroy timer
    EventKillTimer();
-      
+
   }
 
 
@@ -66,15 +55,15 @@ void OnDeinit(const int reason)
 string getCSVHeader( string sym, int period, int range) {
 
    string result = "";
- 
+
    for(int i = range; i>=1; i--){
       result = StringConcatenate(result, "H_", i, ",");
       result = StringConcatenate(result, "L_", i, ",");
       result = StringConcatenate(result, "C_", i, ",");
    }
-   
+
    result = StringConcatenate(result, "O");
-   
+
    return result;
 }
 
@@ -95,14 +84,14 @@ double normalize(double value) {
    } else if(pipized < 0) {
       ret = MathLog10(MathAbs(pipized)) / -2.5;
    }
-   
+
    if(ret > 1) {
       return 1;
    } else if(ret < -1) {
       return -1;
    } else {
       return ret;
-   }   
+   }
 }
 
 string getDataRow(string sym, int period, int range) {
