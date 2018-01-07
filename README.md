@@ -8,3 +8,13 @@ Copy over experts from Experts folder to MetaTrader's Experts folder and compile
 ### Result
 
 Exported CSV will be placed in `[your user folder]\AppData\Roaming\MetaQuotes\Terminal\[ID Folder]\tester\files`
+
+
+### Implemented exporters
+
+#### OHCLT train data.mq4
+
+calculates relative difference between consecutive OHLC bars and puts them in rows for each data tick.
+Can produce more than a single value per line (controllable in script).
+Attaches times alongside each row to give learning network a bit more data about data context.
+All values are normalized into [-1;-1] range.
