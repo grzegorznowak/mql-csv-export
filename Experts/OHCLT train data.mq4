@@ -108,20 +108,21 @@ double normalize(double value) {
 string getDataRow(string sym, int period, int range) {
    string result   = "";
    datetime t      = Time[1];
-   double day_norm = TimeDayOfWeek(t) / 6.0;
+   double day_norm = (TimeDayOfWeek(t) / 6.0) * 2 - 1;
    int hour        = TimeHour(t);
    int minute      = TimeMinute(t);
-   
+
    // OHCL data comes first
    for(int i = range-1; i>=0; i--){
+      result = StringConcatenate(result, DoubleToStr(normalize(iOpen(sym, period, i+1)  - iOpen(sym, period, i+2)) , 7), ",");
       result = StringConcatenate(result, DoubleToStr(normalize(iHigh(sym, period, i+1)  - iHigh(sym, period, i+2)) , 7), ",");
       result = StringConcatenate(result, DoubleToStr(normalize(iLow(sym, period, i+1)   - iLow(sym, period, i+2))  , 7), ",");
       result = StringConcatenate(result, DoubleToStr(normalize(iClose(sym, period, i+1) - iClose(sym, period, i+2)), 7), ",");
-   }   
-   
+   }
+
    // now normalized datetime columns
-   double decimal_time_normalized = (hour + (60 * minute) / 3600.0) / 24.0;
-   result = StringConcatenate(DoubleToStr(day_norm, 3), ",",DoubleToStr(decimal_time_normalized, 7));
+   double decimal_time_normalized = ((hour + (60 * minute) / 3600.0) / 24.0) * 2 - 1;
+   result = StringConcatenate(result,DoubleToStr(day_norm, 3), ",",DoubleToStr(decimal_time_normalized, 7));
 
    return result;
 } 
