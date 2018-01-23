@@ -12,8 +12,13 @@
 
 const int EVAL_RANGE = 1; // for the purpose of RNN network we start playing around one tick per one NN evolution
 
-int file_handle = FileOpen(StringConcatenate("mt4_",Symbol(),"_", Period(),"_range_", EVAL_RANGE, "_OHCLT_train_data.csv"),FILE_READ|FILE_WRITE|FILE_CSV);
+extern bool do_normalize = true;
+
+
+int file_handle = 0;
 int barsTotal   = 0;
+
+
 
 int start() {
 
@@ -25,6 +30,12 @@ int start() {
 //+------------------------------------------------------------------+
 int OnInit()
   {
+  string normalize_str = "normalized";
+
+   if(!do_normalize) {
+      normalize_str = "UNnormalized";
+   }
+   file_handle = FileOpen(StringConcatenate("mt4_",Symbol(),"_", Period(),"_range_", EVAL_RANGE, "_", normalize_str, "_OHCLT_train_data.csv"),FILE_READ|FILE_WRITE|FILE_CSV);
 //--- create timer
    EventSetTimer(60);
 
@@ -78,19 +89,24 @@ long pipize(double value) {
 */
 double normalize(double value) {
    long pipized = pipize(value);
-   double ret   = 0;
-   if(pipized > 0) {
-      ret = MathLog10(pipized) / 2.5;
-   } else if(pipized < 0) {
-      ret = MathLog10(MathAbs(pipized)) / -2.5;
-   }
-
-   if(ret > 1) {
-      return 1;
-   } else if(ret < -1) {
-      return -1;
+   if(!do_normalize) {
+      return pipized;
    } else {
-      return ret;
+
+      double ret   = 0;
+      if(pipized > 0) {
+         ret = MathLog10(pipized) / 2.5;
+      } else if(pipized < 0) {
+         ret = MathLog10(MathAbs(pipized)) / -2.5;
+      }
+
+      if(ret > 1) {
+         return 1;
+      } else if(ret < -1) {
+         return -1;
+      } else {
+         return ret;
+      }
    }
 }
 
