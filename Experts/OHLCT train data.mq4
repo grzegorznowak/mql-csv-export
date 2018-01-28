@@ -12,7 +12,14 @@
 
 const int EVAL_RANGE = 1; // for the purpose of RNN network we start playing around one tick per one NN evolution
 
-extern bool do_normalize = true;
+extern bool do_normalize    = true;
+extern bool attach_datetime = true;
+
+// dont maybe export data for low liquidity periods ?
+extern int StartHour = 08;
+extern int EndHour = 17;
+extern int StartDay = 1;
+extern int EndDay = 5;
 
 
 int file_handle = 0;
@@ -28,21 +35,26 @@ int start() {
 //+------------------------------------------------------------------+
 //| Expert initialization function                                  |
 //+------------------------------------------------------------------+
-int OnInit()
-  {
-  string normalize_str = "normalized";
+
+int OpenExportFile(datetime t) {
+   string normalize_str = "normalized";
+   string datetime_str = "datetime";
 
    if(!do_normalize) {
       normalize_str = "UNnormalized";
    }
-   file_handle = FileOpen(StringConcatenate("mt4_",Symbol(),"_", Period(),"_range_", EVAL_RANGE, "_", normalize_str, "_OHCLT_train_data.csv"),FILE_READ|FILE_WRITE|FILE_CSV);
-//--- create timer
-   EventSetTimer(60);
+   if(!attach_datetime) {
+      datetime_str = "NOdatetime";
+   }
+   string time_string = TimeToStr(t,TIME_DATE);
+   string folder_name = StringConcatenate("mt4_", Symbol(),"_", Period(), "_", "_range_", EVAL_RANGE, "_", normalize_str, "_", datetime_str, "_", StartHour, "-", EndHour, "_", StartDay, "-", EndDay, "_OHCLT_train_data");
+   Print(StringConcatenate(folder_name, "\\", "mt4_", Symbol(),"_", Period(), "_", time_string, "_", "_range_", EVAL_RANGE, "_", normalize_str, "_", datetime_str, "_", StartHour, "-", EndHour, "_", StartDay, "-", EndDay, "_OHCLT_train_data.csv"));
+   Print(time_string);
+   return FileOpen(StringConcatenate(folder_name, "\\", "mt4_", Symbol(),"_", Period(), "_", time_string, "_range_", StartHour, "-", EndHour, "_", StartDay, "-", EndDay, "_OHCLT_data.csv"),FILE_READ|FILE_WRITE|FILE_CSV);
+}
 
-     //  string data = getCSVHeader(Symbol(), Period(), EVAL_RANGE);
+int OnInit() {
 
-
-    //  FileWrite(file_handle, data);
 
 //---
    return(INIT_SUCCEEDED);
@@ -113,40 +125,53 @@ double normalize(double value) {
 string getDataRow(string sym, int period, int range) {
    string result   = "";
    datetime t      = Time[1];
-   double day_norm = (TimeDayOfWeek(t) / 6.0) * 2 - 1;
    int hour        = TimeHour(t);
    int minute      = TimeMinute(t);
+   int dayOfWeek   = TimeDayOfWeek(t);
 
-   // OHCL data comes first
-   for(int i = range-1; i>=0; i--){
-      result = StringConcatenate(result, DoubleToStr(normalize(iOpen(sym, period, i+1)  - iOpen(sym, period, i+2)) , 7), ",");
-      result = StringConcatenate(result, DoubleToStr(normalize(iHigh(sym, period, i+1)  - iHigh(sym, period, i+2)) , 7), ",");
-      result = StringConcatenate(result, DoubleToStr(normalize(iLow(sym, period, i+1)   - iLow(sym, period, i+2))  , 7), ",");
-      result = StringConcatenate(result, DoubleToStr(normalize(iClose(sym, period, i+1) - iClose(sym, period, i+2)), 7), ",");
+   // OHLC data comes first
+   if(hour >= StartHour && hour <= EndHour && dayOfWeek >= StartDay && dayOfWeek <= EndDay) {
+
+      if(hour == StartHour && minute == 0) {
+         if(file_handle != 0) {
+            FileClose(file_handle);
+         }
+         file_handle = OpenExportFile(t);
+      }
+      for(int i = range-1; i>=0; i--){
+         result = StringConcatenate(result, DoubleToStr(normalize(iOpen(sym, period, i+1)  - iOpen(sym, period, i+2)) , 7), ",");
+         result = StringConcatenate(result, DoubleToStr(normalize(iHigh(sym, period, i+1)  - iHigh(sym, period, i+2)) , 7), ",");
+         result = StringConcatenate(result, DoubleToStr(normalize(iLow(sym, period, i+1)   - iLow(sym, period, i+2))  , 7), ",");
+         if(!attach_datetime && i == 0) {
+            result = StringConcatenate(result, DoubleToStr(normalize(iClose(sym, period, i+1) - iClose(sym, period, i+2)), 7)); // dont include last ',' in this case
+         } else {
+            result = StringConcatenate(result, DoubleToStr(normalize(iClose(sym, period, i+1) - iClose(sym, period, i+2)), 7), ",");
+         }
+      }
+
+      if(attach_datetime) {
+        // dont include number of a day for now
+         double day = TimeDayOfWeek(t);
+
+
+         // now normalized datetime columns
+
+
+         double decimal_time_normalized = ((hour + (60 * minute) / 3600.0) / 24.0);
+         result = StringConcatenate(result,DoubleToStr(decimal_time_normalized, 7));
+      }
    }
 
-   // now normalized datetime columns
-   double decimal_time_normalized = ((hour + (60 * minute) / 3600.0) / 24.0) * 2 - 1;
-   result = StringConcatenate(result,DoubleToStr(day_norm, 3), ",",DoubleToStr(decimal_time_normalized, 7));
-
    return result;
-} 
+}
 
 void OnTick() {
    if(Bars > barsTotal){
       barsTotal      = Bars;
       string dataRow = getDataRow(Symbol(), Period(), EVAL_RANGE);
       FileWrite(file_handle, dataRow);
-   }  
+   }
 }
-//+------------------------------------------------------------------+
-//| Timer function                                                   |
-//+------------------------------------------------------------------+
-void OnTimer()
-  {
-//---
-   
-  }
 //+------------------------------------------------------------------+
 //| Tester function                                                  |
 //+------------------------------------------------------------------+
