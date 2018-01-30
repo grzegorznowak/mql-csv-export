@@ -17,4 +17,6 @@ Exported CSV will be placed in `[your user folder]\AppData\Roaming\MetaQuotes\Te
 calculates relative difference between consecutive OHLC bars and puts them in rows for each data tick.
 Can produce more than a single value per line (controllable in script).
 Attaches times alongside each row to give learning network a bit more data about data context.
-All values are normalized into [-1;+1] range.
+Has ability to control it's output's properties using exported variables.
+
+In the latest version splits data into files by day and puts them in a common folder based on parameters supplied.
